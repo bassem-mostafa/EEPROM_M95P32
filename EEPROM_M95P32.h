@@ -101,6 +101,8 @@ extern "C"
      */
     typedef struct EEPROM_M95P32_Instance
     {
+        EEPROM_M95P32_t M95P32;
+
         SPI_t SPI;
 
         GPIO_t ChipSelect;
@@ -178,8 +180,6 @@ extern "C"
      *  @return EEPROM_M95P32_Status_t
      */
     EEPROM_M95P32_Status_t EEPROM_M95P32_Read( EEPROM_M95P32_Instance_t * Instance, EEPROM_M95P32_Address_t Address, EEPROM_M95P32_Data_t * Data, EEPROM_M95P32_DataLength_t DataLength );
-
-    // TODO Add More APIs
 
     // #############################################################################
     // #### Public Variable(s) #####################################################
