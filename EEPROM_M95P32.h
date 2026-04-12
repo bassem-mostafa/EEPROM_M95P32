@@ -103,9 +103,10 @@ extern "C"
     {
         EEPROM_M95P32_t M95P32;
 
-        SPI_t SPI;
+        SPI_t SPIx;
 
         GPIO_t ChipSelect;
+        GPIO_t PowerEnable;
 
         // Managed Internally
         EEPROM_M95P32_InstanceContext_t * Context;

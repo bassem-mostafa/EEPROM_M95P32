@@ -265,56 +265,55 @@ typedef enum EEPROM_M95P32_OperationType
 
 typedef struct EEPROM_M95P32_OperationContext
 {
-    EEPROM_M95P32_Status_t Status;
-    TIM_Timestamp_t Timestamp;
 } EEPROM_M95P32_OperationContext_t;
 
 typedef struct EEPROM_M95P32_Operation
 {
-    EEPROM_M95P32_OperationType_t Type;
-    EEPROM_M95P32_OperationHandler_t Handler;
-    EEPROM_M95P32_OperationContext_t Context;
+    EEPROM_M95P32_OperationType_t Type;       ///< Type
+    EEPROM_M95P32_OperationHandler_t Handler; ///< Handler
+    EEPROM_M95P32_Status_t Status;            ///< Status
+    TIM_Timestamp_t Timeout;                  ///< Timeout
+    EEPROM_M95P32_OperationContext_t Context; ///< Context
 } EEPROM_M95P32_Operation_t;
 
 typedef EEPROM_M95P32_Status_t ( *EEPROM_M95P32_ProcessHandler_t )( EEPROM_M95P32_Instance_t * Instance );
 
 typedef enum EEPROM_M95P32_ProcessType
 {
-    EEPROM_M95P32_ProcessType_None = 0,
-    EEPROM_M95P32_ProcessType_Atomic,
+    EEPROM_M95P32_ProcessType_None = 0, ///< None
+    EEPROM_M95P32_ProcessType_Atomic,   ///< Atomic (Single Operation)
+
+    EEPROM_M95P32_ProcessType_Initialize, ///< Initialize
 } EEPROM_M95P32_ProcessType_t;
 
 typedef struct EEPROM_M95P32_ProcessContext
 {
-    EEPROM_M95P32_Status_t Status;
-    TIM_Timestamp_t Timestamp;
+    EEPROM_M95P32_Operation_t Operation; ///< Operation
 } EEPROM_M95P32_ProcessContext_t;
 
 typedef struct EEPROM_M95P32_Process
 {
-    EEPROM_M95P32_ProcessType_t Type;
-    EEPROM_M95P32_ProcessHandler_t Handler;
-    EEPROM_M95P32_ProcessContext_t Context;
+    EEPROM_M95P32_ProcessType_t Type;       ///< Type
+    EEPROM_M95P32_ProcessHandler_t Handler; ///< Handler
+    EEPROM_M95P32_ProcessContext_t Context; ///< Context
 } EEPROM_M95P32_Process_t;
 
-typedef struct EEPROM_M95P32_Buffer_Transmit
+typedef enum EEPROM_M95P32_Event
 {
-    uint32_t Length;
-    uint8_t Content[ EEPROM_M95P32_BUFFER_SIZE_TRANSMIT ];
-} EEPROM_M95P32_Buffer_Transmit_t;
-
-typedef struct EEPROM_M95P32_Buffer_Receive
-{
-    uint32_t Length;
-    uint8_t Content[ EEPROM_M95P32_BUFFER_SIZE_RECEIVE ];
-} EEPROM_M95P32_Buffer_Receive_t;
+    EEPROM_M95P32_Event_None = 0,
+} EEPROM_M95P32_Event_t;
 
 typedef struct EEPROM_M95P32_InstanceContext
 {
+    EEPROM_M95P32_Event_t Event;
+
     EEPROM_M95P32_Process_t Process;
-    EEPROM_M95P32_Operation_t Operation;
-    EEPROM_M95P32_Buffer_Transmit_t Transmit;
-    EEPROM_M95P32_Buffer_Receive_t Receive;
+
+    BUFFER_t Transmit;
+    uint8_t TransmitContent[ EEPROM_M95P32_BUFFER_SIZE_TRANSMIT ];
+
+    BUFFER_t Receive;
+    uint8_t ReceiveContent[ EEPROM_M95P32_BUFFER_SIZE_RECEIVE ];
 } EEPROM_M95P32_InstanceContext_t;
 
 typedef struct EEPROM_M95P32_Context
@@ -335,15 +334,20 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_Initialize( EEPROM_M95P32_I
 static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_Cycle( EEPROM_M95P32_Instance_t * Instance );
 static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_DeInitialize( EEPROM_M95P32_Instance_t * Instance );
 
-// TODO Enhance the following
+static EEPROM_M95P32_Status_t EEPROM_M95P32_SetProcess( EEPROM_M95P32_Instance_t * Instance, EEPROM_M95P32_ProcessType_t ProcessType );
 
-static EEPROM_M95P32_Status_t EEPROM_M95P32_Process_Initialize_Handler( EEPROM_M95P32_Instance_t * Instance );
+static EEPROM_M95P32_Status_t EEPROM_M95P32_Transfer( EEPROM_M95P32_Instance_t * Instance );
 
-static EEPROM_M95P32_Status_t EEPROM_M95P32_Write_Enable_Handler( EEPROM_M95P32_Instance_t * Instance );
-static EEPROM_M95P32_Status_t EEPROM_M95P32_Write_Enable_Execute( EEPROM_M95P32_Instance_t * Instance );
+static EEPROM_M95P32_Status_t EEPROM_M95P32_ProcessInitialize( EEPROM_M95P32_Instance_t * Instance );
 
-static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_Write( EEPROM_M95P32_Instance_t * Instance );
-static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_Read( EEPROM_M95P32_Instance_t * Instance );
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOffExecute( EEPROM_M95P32_Instance_t * Instance );
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOffResolve( EEPROM_M95P32_Instance_t * Instance );
+
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOnExecute( EEPROM_M95P32_Instance_t * Instance );
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOnResolve( EEPROM_M95P32_Instance_t * Instance );
+
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationWriteEnableExecute( EEPROM_M95P32_Instance_t * Instance );
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationWriteEnableResolve( EEPROM_M95P32_Instance_t * Instance );
 
 // #############################################################################
 // #### Private Variable(s) ####################################################
@@ -375,6 +379,13 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_Context_Cycle( void )
     do
     {
         EEPROM_Trace( "%s( void )", __FUNCTION__ );
+
+        TIM_Status_t TIM_Status = TIM_Status_Error;
+        if ( ( TIM_Status = TIM_GetTimestamp( EEPROM_TIM, &EEPROM_M95P32_Context.Timestamp ) ) != TIM_Status_Success )
+        {
+            Status = EEPROM_M95P32_Status_Error;
+            break;
+        }
     }
     while ( 0 );
 
@@ -402,20 +413,28 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_Initialize( EEPROM_M95P32_I
     {
         EEPROM_Trace( "%s( Instance=%p )", __FUNCTION__, Instance );
 
+        // TODO GPIOs Configuration
+
         EEPROM_M95P32_InstanceContext_t * Context = &EEPROM_M95P32_Context.Context[ Instance->M95P32 ];
 
-        switch ( Instance->M95P32 )
+        Context->Event = EEPROM_M95P32_Event_None;
+
+        BUFFER_Status_t BUFFER_Status = BUFFER_Status_Error;
+        if ( ( BUFFER_Status = BUFFER_Initialize( &Context->Transmit, Context->TransmitContent, UTIL_SizeOf( Context->TransmitContent ) ) ) != BUFFER_Status_Success )
         {
-            default:
-                Status = EEPROM_M95P32_Status_NotSupported;
-                break;
+            Status = EEPROM_M95P32_Status_Error;
+            break;
         }
-        if ( Status != EEPROM_M95P32_Status_Success )
+
+        if ( ( BUFFER_Status = BUFFER_Initialize( &Context->Receive, Context->ReceiveContent, UTIL_SizeOf( Context->ReceiveContent ) ) ) != BUFFER_Status_Success )
         {
+            Status = EEPROM_M95P32_Status_Error;
             break;
         }
 
         Instance->Context = Context;
+
+        Status = EEPROM_M95P32_SetProcess( Instance, EEPROM_M95P32_ProcessType_Initialize );
     }
     while ( 0 );
 
@@ -430,18 +449,28 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_Cycle( EEPROM_M95P32_Instan
     {
         EEPROM_Trace( "%s( Instance=%p )", __FUNCTION__, Instance );
 
-        if ( Instance->Context->Operation.Handler != NULL )
+        EEPROM_M95P32_InstanceContext_t * Context = &EEPROM_M95P32_Context.Context[ Instance->M95P32 ];
+        EEPROM_M95P32_Process_t * Process = &Context->Process;
+        EEPROM_M95P32_Operation_t * Operation = &Process->Context.Operation;
+        EEPROM_M95P32_Event_t Event = Context->Event; // CAUTION: Has to copy events occurred at the early start of the cycle, so as to be cleared at the end of the cycle,
+                                                      //          which let events occurs after that for the next cycle call
+
+        if ( Operation->Handler != NULL )
         {
-            if ( ( Status = Instance->Context->Operation.Handler( Instance ) ) != EEPROM_M95P32_Status_Success )
+            EEPROM_M95P32_Status_t EEPROM_M95P32_Status = EEPROM_M95P32_Status_Error;
+            if ( ( EEPROM_M95P32_Status = Operation->Handler( Instance ) ) != EEPROM_M95P32_Status_Success )
             {
+                Status = EEPROM_M95P32_Status;
                 // FIXME Operation reported non success status, is there any action ?
             }
         }
 
-        if ( Instance->Context->Process.Handler != NULL )
+        if ( Process->Handler != NULL )
         {
-            if ( ( Status = Instance->Context->Process.Handler( Instance ) ) != EEPROM_M95P32_Status_Success )
+            EEPROM_M95P32_Status_t EEPROM_M95P32_Status = EEPROM_M95P32_Status_Error;
+            if ( ( EEPROM_M95P32_Status = Process->Handler( Instance ) ) != EEPROM_M95P32_Status_Success )
             {
+                Status = EEPROM_M95P32_Status;
                 // FIXME Process reported non success status, is there any action ?
             }
         }
@@ -464,40 +493,61 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_DeInitialize( EEPROM_M95P32
     return Status;
 }
 
-static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_Write( EEPROM_M95P32_Instance_t * Instance )
+static EEPROM_M95P32_Status_t EEPROM_M95P32_SetProcess( EEPROM_M95P32_Instance_t * Instance, EEPROM_M95P32_ProcessType_t ProcessType )
 {
     EEPROM_M95P32_Status_t Status = EEPROM_M95P32_Status_Success;
-
     do
     {
         EEPROM_Trace( "%s( Instance=%p )", __FUNCTION__, Instance );
 
-        GPIO_Status_t GPIO_Status = GPIO_Status_Error;
-        if ( ( GPIO_Status = GPIO_Write( Instance->ChipSelect, GPIO_Value_Low ) ) != GPIO_Status_Success )
+        EEPROM_M95P32_InstanceContext_t * Context = &EEPROM_M95P32_Context.Context[ Instance->M95P32 ];
+        EEPROM_M95P32_Process_t * Process = &Context->Process;
+        EEPROM_M95P32_Operation_t * Operation = &Process->Context.Operation;
+
+        Process->Type = ProcessType;
+
+        switch ( ProcessType )
         {
-            Status = EEPROM_M95P32_Status_Error;
+            case EEPROM_M95P32_ProcessType_None:
+                Process->Handler = NULL;
+                break;
+
+            case EEPROM_M95P32_ProcessType_Initialize:
+                Process->Handler = EEPROM_M95P32_ProcessInitialize;
+                break;
+
+            default:
+                EEPROM_Warning( "%s Not Handled Type %d", __FUNCTION__, ProcessType );
+                Status = EEPROM_M95P32_Status_NotSupported;
+                break;
+        }
+        if ( Status != EEPROM_M95P32_Status_Success )
+        {
             break;
         }
 
-        SPI_Status_t SPI_Status = SPI_Status_Error;
-        if ( ( SPI_Status = SPI_Write( Instance->SPI, Instance->Context->Transmit.Content, Instance->Context->Transmit.Length ) ) != SPI_Status_Success )
-        {
-            Status = EEPROM_M95P32_Status_Error;
-            break;
-        }
+        Process->Type = ProcessType;
 
-        if ( ( GPIO_Status = GPIO_Write( Instance->ChipSelect, GPIO_Value_High ) ) != GPIO_Status_Success )
+        Operation->Handler = NULL;
+        Operation->Status = EEPROM_M95P32_Status_Success;
+        Operation->Timeout = EEPROM_M95P32_Context.Timestamp;
+
+        switch ( ProcessType )
         {
-            Status = EEPROM_M95P32_Status_Error;
-            break;
+            case EEPROM_M95P32_ProcessType_None:
+                Operation->Type = EEPROM_M95P32_OperationType_None;
+                break;
+
+            default:
+                Operation->Type = EEPROM_M95P32_OperationType_Pending;
+                break;
         }
     }
     while ( 0 );
-
     return Status;
 }
 
-static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_Read( EEPROM_M95P32_Instance_t * Instance )
+static EEPROM_M95P32_Status_t EEPROM_M95P32_Transfer( EEPROM_M95P32_Instance_t * Instance )
 {
     EEPROM_M95P32_Status_t Status = EEPROM_M95P32_Status_Error;
     do
@@ -512,7 +562,7 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_Read( EEPROM_M95P32_Instanc
         }
 
         SPI_Status_t SPI_Status = SPI_Status_Error;
-        if ( ( SPI_Status = SPI_Transaction( Instance->SPI, Instance->Context->Transmit.Content, Instance->Context->Transmit.Length, Instance->Context->Receive.Content, Instance->Context->Receive.Length ) ) != SPI_Status_Success )
+        if ( ( SPI_Status = SPI_Transaction( Instance->SPIx, Instance->Context->Transmit.Content, Instance->Context->Transmit.Length, Instance->Context->Receive.Content, Instance->Context->Receive.Length ) ) != SPI_Status_Success )
         {
             Status = EEPROM_M95P32_Status_Error;
             break;
@@ -528,6 +578,87 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_Read( EEPROM_M95P32_Instanc
     }
     while ( 0 );
     return Status;
+}
+
+static EEPROM_M95P32_Status_t EEPROM_M95P32_ProcessInitialize( EEPROM_M95P32_Instance_t * Instance )
+{
+    EEPROM_M95P32_Status_t Status = EEPROM_M95P32_Status_Success;
+
+    do
+    {
+        EEPROM_Trace( "%s( Instance=%p )", __FUNCTION__, Instance );
+
+        EEPROM_M95P32_InstanceContext_t * Context = &EEPROM_M95P32_Context.Context[ Instance->M95P32 ];
+        EEPROM_M95P32_Process_t * Process = &Context->Process;
+        EEPROM_M95P32_Operation_t * Operation = &Process->Context.Operation;
+
+        if ( Process->Type != EEPROM_M95P32_ProcessType_Initialize )
+        {
+            EEPROM_Error( "%s Got %d Expected %d", __FUNCTION__, Process->Type, EEPROM_M95P32_ProcessType_Initialize );
+            Status = EEPROM_M95P32_Status_Error;
+            break;
+        }
+
+        if ( Operation->Handler != NULL )
+        {
+            // Operation In-progress
+            break;
+        }
+
+        if ( Operation->Status != EEPROM_M95P32_Status_Success )
+        {
+            Operation->Type = EEPROM_M95P32_OperationType_None;
+        }
+
+        switch ( Operation->Type )
+        {
+            case EEPROM_M95P32_OperationType_Pending:
+                Operation->Status = EEPROM_M95P32_OperationPowerOffExecute( Instance );
+                break;
+
+            case EEPROM_M95P32_OperationType_PowerOff:
+                Operation->Status = EEPROM_M95P32_OperationPowerOnExecute( Instance );
+                break;
+
+            case EEPROM_M95P32_OperationType_PowerOn:
+            default:
+                // TODO OnComplete Callback
+                // if ( Instance->OnComplete != NULL )
+                // {
+                //     Instance->OnComplete( Instance, Operation->Status );
+                // }
+
+                Status = EEPROM_M95P32_SetProcess( Instance, EEPROM_M95P32_ProcessType_None );
+                break;
+        }
+    }
+    while ( 0 );
+
+    return Status;
+}
+
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOffExecute( EEPROM_M95P32_Instance_t * Instance )
+{
+}
+
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOffResolve( EEPROM_M95P32_Instance_t * Instance )
+{
+}
+
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOnExecute( EEPROM_M95P32_Instance_t * Instance )
+{
+}
+
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOnResolve( EEPROM_M95P32_Instance_t * Instance )
+{
+}
+
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationWriteEnableExecute( EEPROM_M95P32_Instance_t * Instance )
+{
+}
+
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationWriteEnableResolve( EEPROM_M95P32_Instance_t * Instance )
+{
 }
 
 // #############################################################################
