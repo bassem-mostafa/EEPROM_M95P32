@@ -88,6 +88,19 @@ extern "C"
     } EEPROM_M95P32_Status_t;
 
     /**
+     *  @brief EEPROM M95P32
+     *
+     *  @note Add as many as required
+     *
+     *  @enum EEPROM_M95P32_t
+     */
+    typedef enum EEPROM_M95P32
+    {
+        EEPROM_M95P32_1 = 0, ///< EEPROM (M95P32) 1
+        EEPROM_M95P32_Count, ///< Count
+    } EEPROM_M95P32_t;
+
+    /**
      *  @brief EEPROM M95P32 Instance Context Type
      *
      *  @struct EEPROM_M95P32_InstanceContext
