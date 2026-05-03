@@ -134,62 +134,63 @@ extern "C"
     /**
      *  @brief Binds Instance of EEPROM M95P32 to interface
      *
-     *  @param[in] EEPROMx EEPROM M95P32 Instance
+     *  @param[in] M95P32x   M95P32 Instance
+     *  @param[in] Interface Connection Interface
      *
      *  @return EEPROM_M95P32_Status_t
      */
-    EEPROM_M95P32_Status_t EEPROM_M95P32_Bind( EEPROM_M95P32_t EEPROMx, EEPROM_M95P32_Interface_t Interface );
+    EEPROM_M95P32_Status_t EEPROM_M95P32_Bind( EEPROM_M95P32_t M95P32x, EEPROM_M95P32_Interface_t Interface );
 
     /**
      *  @brief Initializes Instance of EEPROM M95P32
      *
-     *  @param[in] EEPROMx EEPROM M95P32 Instance
+     *  @param[in] M95P32x M95P32 Instance
      *
      *  @return EEPROM_M95P32_Status_t
      */
-    EEPROM_M95P32_Status_t EEPROM_M95P32_Initialize( EEPROM_M95P32_t EEPROMx );
+    EEPROM_M95P32_Status_t EEPROM_M95P32_Initialize( EEPROM_M95P32_t M95P32x );
 
     /**
      *  @brief Cycles Instance of EEPROM M95P32
      *
-     *  @param[in] EEPROMx EEPROM M95P32 Instance
+     *  @param[in] M95P32x M95P32 Instance
      *
      *  @return EEPROM_M95P32_Status_t
      */
-    EEPROM_M95P32_Status_t EEPROM_M95P32_Cycle( EEPROM_M95P32_t EEPROMx );
+    EEPROM_M95P32_Status_t EEPROM_M95P32_Cycle( EEPROM_M95P32_t M95P32x );
 
     /**
      *  @brief De-initializes Instance of EEPROM M95P32
      *
-     *  @param[in] EEPROMx EEPROM M95P32 Instance
+     *  @param[in] M95P32x M95P32 Instance
      *
      *  @return EEPROM_M95P32_Status_t
      */
-    EEPROM_M95P32_Status_t EEPROM_M95P32_DeInitialize( EEPROM_M95P32_t EEPROMx );
+    EEPROM_M95P32_Status_t EEPROM_M95P32_DeInitialize( EEPROM_M95P32_t M95P32x );
 
     /**
      *  @brief Writes data starting from address
      *
-     *  @param[in] EEPROMx    EEPROM M95P32 Instance
+     *  @param[in] M95P32x    M95P32 Instance
      *  @param[in] Address    Starting address
      *  @param[in] Data       Data pointer
      *  @param[in] DataLength Length of data
      *
      *  @return EEPROM_M95P32_Status_t
      */
-    EEPROM_M95P32_Status_t EEPROM_M95P32_Write( EEPROM_M95P32_t EEPROMx, EEPROM_M95P32_Address_t Address, EEPROM_M95P32_Data_t * Data, EEPROM_M95P32_DataLength_t DataLength );
+    EEPROM_M95P32_Status_t EEPROM_M95P32_Write( EEPROM_M95P32_t M95P32x, EEPROM_M95P32_Address_t Address, EEPROM_M95P32_Data_t * Data, EEPROM_M95P32_DataLength_t DataLength );
 
     /**
      *  @brief Reads data starting from address
      *
-     *  @param[in] EEPROMx    EEPROM M95P32 Instance
+     *  @param[in] M95P32x    M95P32 Instance
      *  @param[in] Address    Starting address
      *  @param[in] Data       Data pointer
      *  @param[in] DataLength Length of data
      *
      *  @return EEPROM_M95P32_Status_t
      */
-    EEPROM_M95P32_Status_t EEPROM_M95P32_Read( EEPROM_M95P32_t EEPROMx, EEPROM_M95P32_Address_t Address, EEPROM_M95P32_Data_t * Data, EEPROM_M95P32_DataLength_t DataLength );
+    EEPROM_M95P32_Status_t EEPROM_M95P32_Read( EEPROM_M95P32_t M95P32x, EEPROM_M95P32_Address_t Address, EEPROM_M95P32_Data_t * Data, EEPROM_M95P32_DataLength_t DataLength );
 
     // #############################################################################
     // #### Public Variable(s) #####################################################
