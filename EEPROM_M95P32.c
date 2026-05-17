@@ -355,6 +355,9 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOnResolve( EEPROM_M95P
 static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationWriteEnableExecute( EEPROM_M95P32_t M95P32x );
 static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationWriteEnableResolve( EEPROM_M95P32_t M95P32x );
 
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationWriteEnableExecute( EEPROM_M95P32_t M95P32x );
+static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationWriteEnableResolve( EEPROM_M95P32_t M95P32x );
+
 // #############################################################################
 // #### Private Variable(s) ####################################################
 // #############################################################################
@@ -559,6 +562,7 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_DeInitialize( EEPROM_M95P32
 static EEPROM_M95P32_Status_t EEPROM_M95P32_SetProcess( EEPROM_M95P32_t M95P32x, EEPROM_M95P32_ProcessType_t ProcessType )
 {
     EEPROM_M95P32_Status_t Status = EEPROM_M95P32_Status_Success;
+
     do
     {
         EEPROM_Trace( "%s( M95P32x=%d )", __FUNCTION__, M95P32x );
@@ -607,12 +611,14 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_SetProcess( EEPROM_M95P32_t M95P32x,
         }
     }
     while ( 0 );
+
     return Status;
 }
 
 static EEPROM_M95P32_Status_t EEPROM_M95P32_Transfer( EEPROM_M95P32_t M95P32x )
 {
-    EEPROM_M95P32_Status_t Status = EEPROM_M95P32_Status_Error;
+    EEPROM_M95P32_Status_t Status = EEPROM_M95P32_Status_Success;
+
     do
     {
         EEPROM_Trace( "%s( M95P32x=%d )", __FUNCTION__, M95P32x );
@@ -632,16 +638,9 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_Transfer( EEPROM_M95P32_t M95P32x )
             Status = EEPROM_M95P32_Status_Error;
             break;
         }
-
-        if ( ( GPIO_Status = GPIO_Write( Context->ChipSelect, GPIO_Value_High ) ) != GPIO_Status_Success )
-        {
-            Status = EEPROM_M95P32_Status_Error;
-            break;
-        }
-
-        Status = EEPROM_M95P32_Status_Success;
     }
     while ( 0 );
+
     return Status;
 }
 
@@ -704,18 +703,138 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_ProcessInitialize( EEPROM_M95P32_t M
 
 static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOffExecute( EEPROM_M95P32_t M95P32x )
 {
+    EEPROM_M95P32_Status_t Status = EEPROM_M95P32_Status_Success;
+
+    do
+    {
+        EEPROM_Trace( "%s( M95P32x=%d )", __FUNCTION__, M95P32x );
+
+        EEPROM_M95P32_InstanceContext_t * Context = &EEPROM_M95P32_Context.Context[ M95P32x ];
+        EEPROM_M95P32_Process_t * Process = &Context->Process;
+        EEPROM_M95P32_Operation_t * Operation = &Process->Context.Operation;
+
+        GPIO_Status_t GPIO_Status = GPIO_Status_Success;
+        if ( ( GPIO_Status = GPIO_Write( Context->PowerEnable, GPIO_Value_Low ) ) != GPIO_Status_Success )
+        {
+            Status = EEPROM_M95P32_Status_Error;
+            break;
+        }
+
+        Operation->Type = EEPROM_M95P32_OperationType_PowerOff;
+        Operation->Handler = EEPROM_M95P32_OperationPowerOffResolve;
+        Operation->Status = EEPROM_M95P32_Status_Success;
+        Operation->Timeout = EEPROM_M95P32_Context.Timestamp;
+
+        TIM_Status_t TIM_Status = TIM_Status_Success;
+        if ( ( TIM_Status = TIM_Timestamp_AddMillisecond( &Operation->Timeout, 100 ) ) != TIM_Status_Success )
+        {
+            Status = EEPROM_M95P32_Status_Error;
+            break;
+        }
+    }
+    while ( 0 );
+
+    return Status;
 }
 
 static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOffResolve( EEPROM_M95P32_t M95P32x )
 {
+    EEPROM_M95P32_Status_t Status = EEPROM_M95P32_Status_Success;
+
+    do
+    {
+        EEPROM_Trace( "%s( M95P32x=%d )", __FUNCTION__, M95P32x );
+
+        EEPROM_M95P32_InstanceContext_t * Context = &EEPROM_M95P32_Context.Context[ M95P32x ];
+        EEPROM_M95P32_Process_t * Process = &Context->Process;
+        EEPROM_M95P32_Operation_t * Operation = &Process->Context.Operation;
+
+        if ( Operation->Type != EEPROM_M95P32_OperationType_PowerOff )
+        {
+            EEPROM_Error( "%s Got %d Expected %d", __FUNCTION__, Operation->Type, EEPROM_M95P32_OperationType_PowerOff );
+            Status = EEPROM_M95P32_Status_Error;
+            break;
+        }
+
+        TIM_Status_t TIM_Status = TIM_Status_Success;
+        if ( ( TIM_Status = TIM_IsExpiredTimestamp( EEPROM_TIM, &Operation->Timeout ) ) == TIM_Status_Success )
+        {
+            Operation->Status = EEPROM_M95P32_Status_Success;
+            Operation->Handler = NULL;
+            break;
+        }
+    }
+    while ( 0 );
+
+    return Status;
 }
 
 static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOnExecute( EEPROM_M95P32_t M95P32x )
 {
+    EEPROM_M95P32_Status_t Status = EEPROM_M95P32_Status_Success;
+
+    do
+    {
+        EEPROM_Trace( "%s( M95P32x=%d )", __FUNCTION__, M95P32x );
+
+        EEPROM_M95P32_InstanceContext_t * Context = &EEPROM_M95P32_Context.Context[ M95P32x ];
+        EEPROM_M95P32_Process_t * Process = &Context->Process;
+        EEPROM_M95P32_Operation_t * Operation = &Process->Context.Operation;
+
+        GPIO_Status_t GPIO_Status = GPIO_Status_Success;
+        if ( ( GPIO_Status = GPIO_Write( Context->PowerEnable, GPIO_Value_High ) ) != GPIO_Status_Success )
+        {
+            Status = EEPROM_M95P32_Status_Error;
+            break;
+        }
+
+        Operation->Type = EEPROM_M95P32_OperationType_PowerOn;
+        Operation->Handler = EEPROM_M95P32_OperationPowerOnResolve;
+        Operation->Status = EEPROM_M95P32_Status_Success;
+        Operation->Timeout = EEPROM_M95P32_Context.Timestamp;
+
+        TIM_Status_t TIM_Status = TIM_Status_Success;
+        if ( ( TIM_Status = TIM_Timestamp_AddMillisecond( &Operation->Timeout, 100 ) ) != TIM_Status_Success )
+        {
+            Status = EEPROM_M95P32_Status_Error;
+            break;
+        }
+    }
+    while ( 0 );
+
+    return Status;
 }
 
 static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationPowerOnResolve( EEPROM_M95P32_t M95P32x )
 {
+    EEPROM_M95P32_Status_t Status = EEPROM_M95P32_Status_Success;
+
+    do
+    {
+        EEPROM_Trace( "%s( M95P32x=%d )", __FUNCTION__, M95P32x );
+
+        EEPROM_M95P32_InstanceContext_t * Context = &EEPROM_M95P32_Context.Context[ M95P32x ];
+        EEPROM_M95P32_Process_t * Process = &Context->Process;
+        EEPROM_M95P32_Operation_t * Operation = &Process->Context.Operation;
+
+        if ( Operation->Type != EEPROM_M95P32_OperationType_PowerOn )
+        {
+            EEPROM_Error( "%s Got %d Expected %d", __FUNCTION__, Operation->Type, EEPROM_M95P32_OperationType_PowerOn );
+            Status = EEPROM_M95P32_Status_Error;
+            break;
+        }
+
+        TIM_Status_t TIM_Status = TIM_Status_Success;
+        if ( ( TIM_Status = TIM_IsExpiredTimestamp( EEPROM_TIM, &Operation->Timeout ) ) == TIM_Status_Success )
+        {
+            Operation->Status = EEPROM_M95P32_Status_Success;
+            Operation->Handler = NULL;
+            break;
+        }
+    }
+    while ( 0 );
+
+    return Status;
 }
 
 static EEPROM_M95P32_Status_t EEPROM_M95P32_OperationWriteEnableExecute( EEPROM_M95P32_t M95P32x )
