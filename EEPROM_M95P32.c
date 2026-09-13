@@ -368,32 +368,23 @@ static EEPROM_M95P32_Context_t EEPROM_M95P32_Context;
 // #### Private Method(s) ######################################################
 // #############################################################################
 
-static SPI_Status_t SPI_CallbackOnComplete( SPI_t SPIx, SPI_Status_t Status )
+static SPI_Status_t SPI_CallbackOnComplete( SPI_t SPIx, SPI_Status_t SPI_Status, SPI_CallbackContext_t * SPI_CallbackContext )
 {
-    SPI_Status_t SPI_Status = SPI_Status_Success;
+    SPI_Status_t Status = SPI_Status_Success;
+    EEPROM_M95P32_InstanceContext_t * Context = ( EEPROM_M95P32_InstanceContext_t * ) SPI_CallbackContext;
 
     do
     {
-        EEPROM_Debug( "%s( SPIx=%d, Status=%p )", __FUNCTION__, SPIx, Status );
+        EEPROM_Debug( "%s( SPIx=%d, SPI_Status=%d, SPI_CallbackContext=%p )", __FUNCTION__, SPIx, SPI_Status, SPI_CallbackContext );
 
-        // FIXME Enhance the following
-        EEPROM_M95P32_InstanceContext_t * Context = NULL;
-        for ( EEPROM_M95P32_t M95P32_x = EEPROM_M95P32_1; M95P32_x < EEPROM_M95P32_Count; ++M95P32_x )
+        if ( Context == NULL
+             || Context->SPIx != SPIx )
         {
-            Context = &EEPROM_M95P32_Context.Context[ M95P32_x ];
-            if ( Context->SPIx == SPIx )
-            {
-                break;
-            }
-
-            Context = NULL;
-        }
-        if ( Context == NULL )
-        {
+            Status = SPI_Status_Error;
             break;
         }
 
-        switch ( Status )
+        switch ( SPI_Status )
         {
             case SPI_Status_Success:
                 Context->Event |= EEPROM_M95P32_Event_SPI_Success;
@@ -407,13 +398,13 @@ static SPI_Status_t SPI_CallbackOnComplete( SPI_t SPIx, SPI_Status_t Status )
         GPIO_Status_t GPIO_Status = GPIO_Status_Success;
         if ( ( GPIO_Status = GPIO_Write( Context->ChipSelect, GPIO_Value_High ) ) != GPIO_Status_Success )
         {
-            Status = EEPROM_M95P32_Status_Error;
+            Status = SPI_Status_Error;
             break;
         }
     }
     while ( 0 );
 
-    return SPI_Status;
+    return Status;
 }
 
 static EEPROM_M95P32_Status_t EEPROM_M95P32_Context_Initialize( void )
@@ -479,7 +470,7 @@ static EEPROM_M95P32_Status_t EEPROM_M95P32_Instance_Initialize( EEPROM_M95P32_t
         EEPROM_M95P32_InstanceContext_t * Context = &EEPROM_M95P32_Context.Context[ M95P32x ];
 
         SPI_Status_t SPI_Status = SPI_Status_Success;
-        if ( ( SPI_Status = SPI_SetCallbackOnComplete( Context->SPIx, SPI_CallbackOnComplete ) ) != SPI_Status_Success )
+        if ( ( SPI_Status = SPI_SetOnComplete( Context->SPIx, ( SPI_OnComplete_t ) { SPI_CallbackOnComplete, Context } ) ) != SPI_Status_Success )
         {
             Status = EEPROM_M95P32_Status_Error;
             break;
